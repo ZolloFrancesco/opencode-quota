@@ -1,5 +1,5 @@
 node_modules/
-dist/
+# La build dist/ è intenzionalmente tracciata nel branch di distribuzione.
 
 # Logs
 *.log

@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "sourceCommit": "0d6e5b33510f06242012a73e6869881847672563",
+  "sourceLockfileSha256": "df13eed1c8a4b7bec9191ef59e7bd34a226521ff33064890fa4352ce1ac46740",
+  "node": "24.22.3",
+  "pnpm": "11.28.9",
+  "distFiles": 442,
+  "distSha256": "ac7af60925fb2fc8b7abbe2efc53f0cf0da5a53718d3e240e2c0faa3b92dcf6e"
+}
