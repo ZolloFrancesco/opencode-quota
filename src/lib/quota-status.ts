@@ -1175,6 +1175,20 @@ const DEBUG_DETAILS = {
       "weekly_resets_at",
     ),
   },
+  "mistral-vibe": {
+    quota_source: oneOf("Vibe billing API (native Python credential resolver)"),
+    plan: oneOf("FREE", "INDIVIDUAL", "PRO", "EDU", "TEAM", "ENTERPRISE"),
+    payg_enabled: bool,
+    failure_kind: oneOf(
+      "missing_runtime",
+      "unsupported_runtime",
+      "missing_auth",
+      "unavailable",
+      "failed",
+      "timeout",
+      "invalid_response",
+    ),
+  },
   opencode: {
     console_auth_state: oneOf(...CONSOLE_AUTH_STATES),
     budget_source: oneOf("member_budget", "credit_limit"),

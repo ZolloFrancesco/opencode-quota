@@ -22,6 +22,7 @@ import {
   minimaxChinaCodingPlanProvider,
   minimaxCodingPlanProvider,
 } from "./minimax-coding-plan.js";
+import { mistralVibeProvider } from "./mistral-vibe.js";
 import { ollamaCloudProvider } from "./ollama-cloud.js";
 import { openaiProvider } from "./openai.js";
 import { opencodeGoProvider } from "./opencode-go.js";
@@ -52,6 +53,7 @@ const PROVIDERS_BY_ID = {
   "opencode-go": opencodeGoProvider,
   opencode: opencodeZenProvider,
   "ollama-cloud": ollamaCloudProvider,
+  "mistral-vibe": mistralVibeProvider,
   "quota-providers": quotaProvidersProvider,
 } satisfies Record<CanonicalQuotaProviderId, QuotaProvider>;
 

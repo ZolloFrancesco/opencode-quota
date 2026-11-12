@@ -264,6 +264,13 @@ export const QUOTA_PROVIDER_REGISTRATION_SOURCE = [
     },
   },
   {
+    id: "mistral-vibe",
+    label: "Mistral Vibe",
+    runtimeIds: ["mistral-vibe"],
+    synonyms: [],
+    rowKeys: ["monthly"],
+  },
+  {
     id: "quota-providers",
     label: "Custom providers",
     runtimeIds: [],

@@ -12,6 +12,7 @@ pnpm-debug.log*
 # Build / tooling artifacts
 *.tsbuildinfo
 coverage/
+__pycache__/
 .pnpm-store/
 /package-artifacts/
 

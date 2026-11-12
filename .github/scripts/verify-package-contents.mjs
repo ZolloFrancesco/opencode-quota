@@ -72,6 +72,7 @@ const requiredFiles = new Set([
   "README.md",
   "package.json",
   "dist/data/modelsdev-pricing.min.json",
+  "dist/lib/mistral-vibe-quota.py",
 ]);
 
 function addManifestPath(value) {

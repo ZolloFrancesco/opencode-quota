@@ -51,6 +51,7 @@ function requiredPackageFiles(): string[] {
     "README.md",
     "package.json",
     "dist/data/modelsdev-pricing.min.json",
+    "dist/lib/mistral-vibe-quota.py",
   ]);
   const add = (value: string) => paths.add(value.replace(/^\.\//, ""));
 
