@@ -759,16 +759,13 @@ describe("server quota RPC", () => {
     expect(text).toContain("\ncopilot:\n- state: ok\n");
     expect(mocks.reconcileDetectedProvidersInGlobalConfig).not.toHaveBeenCalled();
 
-    // The slash command of Web and Desktop adds the detected providers.
+    // Web and Desktop diagnostics must also leave the user's config unchanged.
     await runCommand("quota_status");
-    expect(mocks.reconcileDetectedProvidersInGlobalConfig).toHaveBeenCalledWith({
-      directory: process.env.HOME,
-      detectedProviderIds: ["copilot"],
-    });
+    expect(mocks.reconcileDetectedProvidersInGlobalConfig).not.toHaveBeenCalled();
   });
 
   it.each(["claude-code", "claude-agent"])(
-    "declares only providers OpenCode lists, never the canonical id of the %s alias",
+    "does not declare providers in the user's config for the %s alias",
     async (alias) => {
       useSettings({ providers: { off: [] } });
       mocks.getProviders.mockReturnValue([
@@ -781,10 +778,7 @@ describe("server quota RPC", () => {
 
       await runCommand("quota_status");
 
-      expect(mocks.reconcileDetectedProvidersInGlobalConfig).toHaveBeenCalledWith({
-        directory: process.env.HOME,
-        detectedProviderIds: ["copilot"],
-      });
+      expect(mocks.reconcileDetectedProvidersInGlobalConfig).not.toHaveBeenCalled();
     },
   );
 
@@ -970,43 +964,29 @@ describe("server quota RPC", () => {
     });
 
     it.each([
-      { name: "a working repair", repair: () => Promise.resolve({ changed: true }), warns: false },
+      { name: "a working repair", repair: () => Promise.resolve({ changed: true }) },
       {
         name: "a failed repair",
         repair: () => Promise.reject(new Error("disk full")),
-        warns: true,
       },
-    ])(
-      "adds the detected providers of the quota_status tool to the project with $name",
-      async ({ repair, warns }) => {
-        mocks.reconcileDetectedProvidersInGlobalConfig.mockImplementationOnce(repair);
-        const openaiAnswer = answer({ name: "OpenAI", rows: [percentRow("five_hour", "5h", 69)] });
-        mocks.getProviders.mockReturnValue([
-          provider("openai", vi.fn().mockResolvedValue(openaiAnswer)),
-        ]);
-        const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
-        const projectDirectory = `${TEST_RUNTIME_ROOT}/project`;
-        const { tools } = await setupServer({ directory: projectDirectory });
-        const tool = tools.find((item) => item.name === "quota_status");
+    ])("leaves provider configuration untouched even with $name", async ({ repair }) => {
+      mocks.reconcileDetectedProvidersInGlobalConfig.mockImplementationOnce(repair);
+      const openaiAnswer = answer({ name: "OpenAI", rows: [percentRow("five_hour", "5h", 69)] });
+      mocks.getProviders.mockReturnValue([
+        provider("openai", vi.fn().mockResolvedValue(openaiAnswer)),
+      ]);
+      const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+      const projectDirectory = `${TEST_RUNTIME_ROOT}/project`;
+      const { tools } = await setupServer({ directory: projectDirectory });
+      const tool = tools.find((item) => item.name === "quota_status");
 
-        const output = await tool?.execute({}, { sessionID: "session-auto-provider" });
-        const content = (output as { content: string }).content;
-        expect(content).toMatch(/^# Quota Status /u);
-        expect(content).toContain("\n- origin: quota_status tool\n");
-        expect(mocks.reconcileDetectedProvidersInGlobalConfig).toHaveBeenCalledWith({
-          directory: projectDirectory,
-          detectedProviderIds: ["openai"],
-        });
-        if (warns) {
-          expect(warn).toHaveBeenCalledWith(
-            "Failed to add detected providers to global OpenCode config",
-            expect.any(Error),
-          );
-        } else {
-          expect(warn).not.toHaveBeenCalled();
-        }
-      },
-    );
+      const output = await tool?.execute({}, { sessionID: "session-auto-provider" });
+      const content = (output as { content: string }).content;
+      expect(content).toMatch(/^# Quota Status /u);
+      expect(content).toContain("\n- origin: quota_status tool\n");
+      expect(mocks.reconcileDetectedProvidersInGlobalConfig).not.toHaveBeenCalled();
+      expect(warn).not.toHaveBeenCalled();
+    });
 
     it("waits before asking a failed provider again; a manual refresh asks at once", async () => {
       useQuotaSettings({

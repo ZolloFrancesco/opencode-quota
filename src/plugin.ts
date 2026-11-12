@@ -37,8 +37,6 @@ import {
   createIntegrationCredentialSource,
   notifyCredentialsChanged,
 } from "./lib/opencode-auth.js";
-import { reconcileDetectedProvidersInGlobalConfig } from "./lib/opencode-config-providers.js";
-import { getQuotaProviderRuntimeIds } from "./lib/provider-metadata.js";
 import { statusReport } from "./lib/quota-dialog-commands.js";
 import {
   containsQuotaReport,
@@ -128,11 +126,11 @@ export function createQuotaServerPlugin(
 
       // The server holds the settings it read last; every reader takes them from here.
       const liveSettings = await createLiveSettings({ projectDir });
-      // /quota_status reports the providers it detected. The slash commands and
-      // the tool add them to the global OpenCode config; the TUI palette (via RPC) never writes it.
+      // Diagnostics are read-only on every surface. OpenCode V2 discovers built-in
+      // and companion providers without legacy v1 declarations in the user's config.
       const buildStatusOutput = async (
         sessionID: string | undefined,
-        options: { origin: StatusOrigin; reconcileDetectedProviders: boolean },
+        options: { origin: StatusOrigin },
       ): Promise<string> => {
         const report = await statusReport(sourceHost, {
           origin: options.origin,
@@ -141,31 +139,6 @@ export function createQuotaServerPlugin(
           conversion: liveSettings.conversion,
           nowMs: Date.now(),
         });
-        const detected = report.json.providers
-          .filter((provider) => provider.enabled && provider.available)
-          .map((provider) => provider.id);
-        if (options.reconcileDetectedProviders && detected.length > 0) {
-          try {
-            // Only declare a provider through its own OpenCode id. A quota provider can be available
-            // through another provider id (claude-code or claude-agent for anthropic); declaring the
-            // canonical id would add a second, credential-less provider to the catalog.
-            const runtime = new Set(
-              (await ctx.provider.list()).data.map((provider) => provider.id),
-            );
-            await reconcileDetectedProvidersInGlobalConfig({
-              directory: locationDirectory,
-              detectedProviderIds: detected.filter(
-                (id) =>
-                  runtime.has(id) ||
-                  !getQuotaProviderRuntimeIds(id).some(
-                    (runtimeId) => runtimeId !== id && runtime.has(runtimeId),
-                  ),
-              ),
-            });
-          } catch (error) {
-            console.warn("Failed to add detected providers to global OpenCode config", error);
-          }
-        }
         return report.text;
       };
 
@@ -287,7 +260,6 @@ export function createQuotaServerPlugin(
           logRpcFailure("status", async () => {
             const text = await buildStatusOutput(input.sessionID, {
               origin: "tui",
-              reconcileDetectedProviders: false,
             });
             return { text: sanitizeDisplayText(text) };
           }),
@@ -371,7 +343,6 @@ export function createQuotaServerPlugin(
           async execute(_input, context) {
             const text = await buildStatusOutput(context.sessionID, {
               origin: "tool",
-              reconcileDetectedProviders: true,
             });
             return { content: sanitizeDisplayText(text) };
           },
@@ -443,7 +414,6 @@ export function createQuotaServerPlugin(
           async execute(invocation) {
             const text = await buildStatusOutput(invocation.sessionID, {
               origin: "slash_command",
-              reconcileDetectedProviders: true,
             });
             await postReport(invocation.sessionID, "quota_status", text);
           },
